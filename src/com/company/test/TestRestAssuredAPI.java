@@ -19,6 +19,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.*;
 
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
@@ -292,13 +294,13 @@ public class TestRestAssuredAPI {
 
         //стримы для фильтрация - поиск наших созданных животных в массиве
         Stream<Pet> myCreatedPetsStream = pets.stream();
-        long counter = myCreatedPetsStream
+        List <Pet> filteredPetList = myCreatedPetsStream
                 .filter((x) -> {
                     Stream<Pet> myReceivedPetsStream = stream(foundPetsByStatus);
                     return myReceivedPetsStream
                             .anyMatch((y) -> x.getId() == y.getId() && Objects.equals(x.getName(), y.getName()));
                 })
-                .count();
+                .collect(Collectors.toList());
 
 
         // удалить своего питомца в конце теста, чтобы не засорять базу
@@ -315,11 +317,12 @@ public class TestRestAssuredAPI {
 
             DeletePetResponse deleteResponseAsClass = deleteResponse.as(DeletePetResponse.class);
             assertEquals(200, deleteResponseAsClass.getCode());
+
             assertNotNull(deleteResponseAsClass.getType());
             assertEquals(pet.getId(), Long.parseLong(deleteResponseAsClass.getMessage()));
         }
 
-        assertEquals(2, counter);
+        assertEquals(pets.size(), filteredPetList.size(), "Size is not the same");
     }
 }
 
